@@ -11,6 +11,10 @@ import (
 	jwt "github.com/golang-jwt/jwt/v5"
 )
 
+func (s *basicServer) symmetricGetRf(c *gin.Context) {
+
+}
+
 func (s *basicServer) symmetricLogin(c *gin.Context) {
 	userClaims := entities.UserClaims{
 		Name:  "Thong",
@@ -28,17 +32,32 @@ func (s *basicServer) symmetricLogin(c *gin.Context) {
 
 	otps := []jwt.TokenOption{}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, userClaims, otps...)
+	jwtTk := jwt.NewWithClaims(jwt.SigningMethodHS256, userClaims, otps...)
 
-	accessToken, err := token.SignedString([]byte(constants.HSKey))
+	accessToken, err := jwtTk.SignedString([]byte(constants.HSKey))
 	if err != nil {
-		slog.Error("SignedString error", slog.Any("err", err), slog.String("at", accessToken))
+		slog.Error("SignedString error", slog.Any("err", err))
+		c.JSON(http.StatusInternalServerError, gin.H{})
+		return
+	}
+
+	refreshTokenClaims := jwt.RegisteredClaims{
+		ExpiresAt: &jwt.NumericDate{Time: time.Now().Add(time.Hour * 24)},
+		ID:        userClaims.ID,
+	}
+
+	jwtRf := jwt.NewWithClaims(jwt.SigningMethodHS256, refreshTokenClaims, otps...)
+
+	rf, err := jwtRf.SignedString([]byte(constants.HSKey))
+	if err != nil {
+		slog.Error("SignedString rf error", slog.Any("err", err))
 		c.JSON(http.StatusInternalServerError, gin.H{})
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"accessToken": accessToken,
+		"accessToken":  accessToken,
+		"refreshToken": rf,
 	})
 }
 
