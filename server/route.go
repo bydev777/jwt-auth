@@ -7,7 +7,7 @@ func (s *basicServer) RegisterBasicRoutes() {
 	{
 		sym.POST("/login", s.symmetricLogin)
 		sym.GET("/secret", s.validateSymmetricToken)
-		sym.GET("/refresh-token", s.validateSymmetricToken)
+		sym.GET("/refresh-token", s.symmetricGetRf)
 	}
 
 	asym := r.Group("/asym")
